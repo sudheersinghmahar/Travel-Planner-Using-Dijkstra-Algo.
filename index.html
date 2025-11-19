@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Travel Planner</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center fixed;
+      background-size: cover;
+      font-family: Arial, sans-serif;
+    }
+
+    .container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 400px;
+      z-index: 10;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    select, button {
+      width: 100%;
+      margin: 10px 0;
+      font-size: 1rem;
+      padding: 10px;
+    }
+
+    button {
+      background-color: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    .info-boxes {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .box {
+      flex: 1;
+      margin: 0 10px;
+      background-color: #f0f8ff;
+      border-radius: 10px;
+      padding: 10px;
+      color: #000;
+      font-weight: bold;
+      text-align: center;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .box:hover {
+      background-color: #cce5ff;
+    }
+
+    #bookNowBox, #guideBox {
+      position: fixed;
+      bottom: 20px;
+      padding: 15px 25px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1000;
+      text-decoration: none;
+    }
+
+    #bookNowBox {
+      left: 20px;
+      background-color: #28a745;
+      color: white;
+    }
+
+    #bookNowBox:hover {
+      background-color: #1e7e34;
+    }
+
+    #guideBox {
+      right: 20px;
+      background-color: #ffc107;
+      color: black;
+    }
+
+    #guideBox:hover {
+      background-color: #e0a800;
+    }
+
+    #wikiModal {
+      display: none;
+      position: fixed;
+      z-index: 1500;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+      font-family: Arial, sans-serif;
+    }
+
+    #wikiModalContent {
+      background-color: #fff;
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    #closeModalBtn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        width: 90%;
+        padding: 20px;
+      }
+
+      .info-boxes {
+        flex-direction: column;
+      }
+
+      .box {
+        margin: 10px 0;
+      }
+
+      #bookNowBox {
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Travel Planner</h1>
+    <label for="source">Select your city:</label>
+    <select id="source"></select>
+
+    <label for="destination">Select destination city:</label>
+    <select id="destination"></select>
+
+    <button onclick="planTravel()">Plan Travel</button>
+    <div id="resultBox" style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 8px; min-height: 50px; font-weight: bold;"></div>
+
+    <div class="info-boxes">
+      <div class="box" id="routeBox" onclick="openMap()">Route</div>
+      <div class="box" id="weatherBox">Weather</div>
+    </div>
+  </div>
+
+  <a href="#" id="bookNowBox">Book Now</a>
+  <a href="#" id="guideBox">Guide</a>
+
+  <div id="wikiModal">
+    <div id="wikiModalContent">
+      <span id="closeModalBtn" onclick="document.getElementById('wikiModal').style.display='none'">&times;</span>
+      <h2 id="wikiTitle">Loading...</h2>
+      <p id="wikiExtract">Please wait while we fetch info...</p>
+      <a href="#" target="_blank" id="wikiLink" style="display:none;">Read more on Wikipedia</a>
+    </div>
+  </div>
+  <script>
+    // cities add ki hai (same as tumhara)
+    const cities = [
+  "Agra", "Ahmedabad", "Amritsar", "Bangalore", "Bhimtal", "Bhopal", "Bhubhaneshwar",
+"Chandigarh", "Chennai", "Daman", "Dehradun", "Delhi", "Dharamshala", "Diu", "Gangtok", "Jaipur",
+"Gulmarg", "Guwahati", "Haldwani", "Hampi", "Hyderabad", "Indore", "Itanagar", "Jaipur", "Jammu",
+"Kanyakumari", "Kochi", "Kolkata", "Kullu", "Leh", "Lucknow", "Ludhiana", "Madurai", "Manali",
+"Mumbai", "Munnar", "Mussoorie", "Mysuru", "Nagpur", "Nainital", "Panaji", "Patna", "Pune", "Puri",
+"Raipur", "Rameswaram", "Rishikesh", "Shillong", "Shimla", "Silguri", "Srinagar", "Surat",
+"Tamil Nadu", "Thiruvananthapuram", "Tirupati", "Udaipur", "Varanasi","Telangana","Pithoragarh","Ranikhet","Champawat"
+];
+
+    const sourceSelect = document.getElementById("source");
+    const destinationSelect = document.getElementById("destination");
+
+    cities.forEach(city => {
+      const option1 = document.createElement("option");
+      const option2 = document.createElement("option");
+      option1.value = option2.value = city;
+      option1.text = option2.text = city;
+      sourceSelect.add(option1);
+      destinationSelect.add(option2);
+    });
+
+    // weather api key (string fixed)
+    const apiKey = "1f193d21e1304e7199b181738252005";
+
+    async function getWeather(city) {
+      // url string fixed with backticks
+      const url = `https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${encodeURIComponent(city)}&aqi=yes`;
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.current) {
+          document.getElementById("weatherBox").textContent = `${city}: ${data.current.condition.text}, ${data.current.temp_c}°C`;
+        } else {
+          document.getElementById("weatherBox").textContent = "Weather unavailable";
+        }
+      } catch (error) {
+        document.getElementById("weatherBox").textContent = "Error fetching weather";
+      }
+    }
+
+    // google map ka link dala hai (template literal fixed)
+    function openMap() {
+      const source = sourceSelect.value;
+      const destination = destinationSelect.value;
+      const mapUrl = `https://www.google.com/maps/dir/${encodeURIComponent(source)}/${encodeURIComponent(destination)}`;
+      window.open(mapUrl, '_blank');
+    }
+    
+// city ka connection kia hai (same object, syntax preserved)
+const cityGraph = {
+  "Delhi": { "Agra": 233, "Jaipur": 280, "Dehradun": 250, "Lucknow": 555, "Chandigarh": 245 },
+  "Agra": { "Delhi": 233, "Jaipur": 240, "Gwalior": 120 },
+  "Jaipur": { "Delhi": 280, "Agra": 240, "Udaipur": 395 },
+  "Dehradun": { "Delhi": 250, "Mussoorie": 35, "Rishikesh": 45, "Dharamshala": 240 },
+  "Mussoorie": { "Dehradun": 35 },
+  "Udaipur": { "Jaipur": 395, "Ahmedabad": 260 },
+  "Ahmedabad": { "Udaipur": 260, "Mumbai": 525, "Surat": 280 },
+  "Mumbai": { "Ahmedabad": 525, "Pune": 150, "Goa": 590 },
+  "Pune": { "Mumbai": 150, "Hyderabad": 560 },
+  "Hyderabad": { "Pune": 560, "Bangalore": 570, "Telangana": 0 },  
+  "Bangalore": { "Hyderabad": 570, "Chennai": 350, "Mysuru": 150 },
+  "Chennai": { "Bangalore": 350, "Pondicherry": 160, "Tamil Nadu": 0 },
+  "Pondicherry": { "Chennai": 160 },
+  "Rishikesh": { "Dehradun": 45 },
+  "Chandigarh": { "Delhi": 245, "Shimla": 115 },
+  "Shimla": { "Chandigarh": 115, "Kullu": 210 },
+  "Kullu": { "Shimla": 210, "Manali": 40 },
+  "Manali": { "Kullu": 40 },
+  "Lucknow": { "Delhi": 555, "Varanasi": 320 },
+  "Varanasi": { "Lucknow": 320, "Patna": 250 },
+  "Patna": { "Varanasi": 250 },
+  "Bhimtal": { "Nainital": 22 },
+  "Nainital": { "Bhimtal": 22, "Haldwani": 40 },
+  "Haldwani": { "Nainital": 40 },
+  "Indore": { "Bhopal": 190 },
+  "Bhopal": { "Indore": 190 },
+  "Pithoragarh": { "Champawat": 75 },
+  "Champawat": { "Pithoragarh": 75, "Ranikhet": 90 },
+  "Ranikhet": { "Champawat": 90 },
+  "Gwalior": { "Agra": 120 },
+  "Amritsar": { "Jammu": 210, "Chandigarh": 230 },
+  "Jammu": { "Amritsar": 210, "Srinagar": 295 },
+  "Srinagar": { "Jammu": 295, "Gulmarg": 50 },
+  "Gulmarg": { "Srinagar": 50 },
+  "Gangtok": { "Silguri": 115 },
+  "Silguri": { "Gangtok": 115, "Siliguri": 115 },
+  "Guwahati": { "Shillong": 100 },
+  "Shillong": { "Guwahati": 100 },
+  "Kochi": { "Munnar": 130 },
+  "Munnar": { "Kochi": 130 },
+  "Madurai": { "Kanyakumari": 245 },
+  "Kanyakumari": { "Madurai": 245 },
+  "Nagpur": { "Raipur": 290 },
+  "Raipur": { "Nagpur": 290 },
+  "Rameswaram": { "Tirupati": 400 },
+  "Tirupati": { "Rameswaram": 400 },
+  "Panaji": { "Goa": 0 },
+  "Goa": { "Mumbai": 590, "Panaji": 0 },
+  "Telangana": { "Hyderabad": 0 },
+  "Tamil Nadu": { "Chennai": 0 },
+  "Daman": { "Mumbai": 170 },
+  "Diu": { "Surat": 225 },
+  "Surat": { "Ahmedabad": 280, "Diu": 225 }
+};
+
+// Symmetrical connections add karna (reverse edges)
+for (const city in cityGraph) {
+  for (const connectedCity in cityGraph[city]) {
+    if (!(connectedCity in cityGraph)) {
+      cityGraph[connectedCity] = {};
+    }
+    if (!(city in cityGraph[connectedCity])) {
+      cityGraph[connectedCity][city] = cityGraph[city][connectedCity];
+    }
+  }
+}
+
+console.log(cityGraph);
+
+// dijkstra algorithm (fixed minor logic issues)
+function dijkstra(graph, start, end) {
+  const distances = {};
+  const previous = {};
+  const pq = new Set(Object.keys(graph));
+
+  for (const city of pq) {
+    distances[city] = Infinity;
+    previous[city] = null;
+  }
+
+  // if start not in graph, return null
+  if (!graph[start] || !graph[end]) {
+    return { distance: null, path: [] };
+  }
+
+  distances[start] = 0;
+
+  while (pq.size > 0) {
+    const current = [...pq].reduce((min, city) =>
+      distances[city] < distances[min] ? city : min
+    );
+    pq.delete(current);
+
+    if (current === end) break;
+
+    for (const neighbor in graph[current]) {
+      const newDist = distances[current] + graph[current][neighbor];
+      if (newDist < distances[neighbor]) {
+        distances[neighbor] = newDist;
+        previous[neighbor] = current;
+      }
+    }
+  }
+
+  // Build path
+  const path = [];
+  let step = end;
+  while (step) {
+    path.unshift(step);
+    step = previous[step];
+  }
+
+  return {
+    distance: distances[end] !== Infinity ? distances[end] : null,
+    path: distances[end] !== Infinity ? path : []
+  };
+}
+
+// plan travel function
+function planTravel() {
+  const source = sourceSelect.value;
+  const destination = destinationSelect.value;
+  const resultBox = document.getElementById('resultBox');
+
+  if (source === destination) {
+    resultBox.textContent = "Source and destination cannot be the same!";
+    return;
+  }
+
+  if (!cityGraph[source] || !cityGraph[destination]) {
+    resultBox.textContent = "Route information not available for selected cities.";
+    return;
+  }
+
+  const result = dijkstra(cityGraph, source, destination);
+  if (result.distance === null) {
+    resultBox.textContent = "No route found between selected cities.";
+  } else {
+    resultBox.innerHTML = `
+      Shortest Distance: <strong>${result.distance} km</strong><br/>
+      Path: <strong>${result.path.join(" → ")}</strong>
+    `;
+  }
+
+  getWeather(destination);
+}
+
+// book now modal — fixed innerHTML (was causing syntax error)
+document.getElementById('bookNowBox').addEventListener('click', () => {
+  const bookingOptions = `
+    <div style="padding: 20px; max-width: 300px;">
+      <h3>Select Booking Option</h3>
+      <button onclick="window.open('https://www.redbus.in', '_blank')">Bus</button>
+      <button onclick="window.open('https://www.irctc.co.in', '_blank')">Train</button>
+      <button onclick="window.open('https://www.makemytrip.com/flights', '_blank')">Flight</button>
+      <button onclick="window.open('https://www.booking.com', '_blank')">Hotel</button>
+      <button onclick="closeBookingOptions()" style="background-color: #dc3545; color: white;">Close</button>
+    </div>
+  `;
+  const modal = document.createElement('div');
+  modal.id = 'bookingModal';
+  modal.style.position = 'fixed';
+  modal.style.top = '0';
+  modal.style.left = '0';
+  modal.style.width = '100%';
+  modal.style.height = '100%';
+  modal.style.backgroundColor = 'rgba(0,0,0,0.6)';
+  modal.style.display = 'flex';
+  modal.style.justifyContent = 'center';
+  modal.style.alignItems = 'center';
+  modal.style.zIndex = '2000';
+  modal.innerHTML = `<div style="background: white; border-radius: 12px; padding: 20px; max-width: 320px; width: 90%; text-align: center;">${bookingOptions}</div>`;
+  document.body.appendChild(modal);
+});
+
+function closeBookingOptions() {
+  const modal = document.getElementById('bookingModal');
+  if (modal) modal.remove();
+}
+
+// guide (Wikipedia) — fixed URL templating + encoding
+document.getElementById('guideBox').addEventListener('click', async () => {
+  const city = destinationSelect.value;
+  const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(city)}`;
+  const modal = document.getElementById('wikiModal');
+  const titleElem = document.getElementById('wikiTitle');
+  const extractElem = document.getElementById('wikiExtract');
+  const linkElem = document.getElementById('wikiLink');
+  titleElem.textContent = 'Loading...';
+  extractElem.textContent = 'Please wait while we fetch info...';
+  linkElem.style.display = 'none';
+  modal.style.display = 'block';
+  try {
+    const res = await fetch(summaryUrl);
+    if (!res.ok) throw new Error('No data found');
+    const data = await res.json();
+    titleElem.textContent = data.title || city;
+    extractElem.textContent = data.extract || 'No information available.';
+    if(data.content_urls?.desktop?.page) {
+      linkElem.href = data.content_urls.desktop.page;
+      linkElem.style.display = 'inline-block';
+      linkElem.textContent = 'Read more on Wikipedia';
+    }
+  } catch (err) {
+    extractElem.textContent = 'Failed to fetch city guide.';
+  }
+});
+  </script>
+</body>
+</html>
